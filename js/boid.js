@@ -1,24 +1,16 @@
 import Vector from "./vector.js";
 
+
+let print = 0;
+const deltaTime = 0.5;
+
 export default class Boid {
     constructor(x, y) {
+        this.radius = 10;
         this.position = new Vector(x, y);
         this.velocity = new Vector();
         this.velocity.random(Math.random() * 10 - 5);
-        this.acceralation = new Vector();
-
-
-        // Parameters
-        this.radius = 2;
-
-        // Motion parameters
-        this.maxSpeed = 5;
-        this.maxForce = 0.025;
-
-        // Force factor
-        this.separateFactor = 2;
-        this.alignmentFactor = 1;
-        this.cohesionFactor = 2;
+        this.acceleration = new Vector();
     }
 
     // Draw on canvas
@@ -33,12 +25,12 @@ export default class Boid {
         // Draw boid
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo( -10, -4);
-        ctx.lineTo(-10, 4);
+        ctx.lineTo( -6, -2);
+        ctx.lineTo(-6, 2);
         ctx.lineTo(0, 0);
         ctx.strokeStyle = 'white';
         ctx.stroke();
-        ctx.fillStyle = '#fff'
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'
         ctx.fill();
 
         // Reset matrix
@@ -47,12 +39,13 @@ export default class Boid {
 
     // Update the position
     update() {
-        this.velocity.addVector(this.acceralation);
-        this.position.addVector(this.velocity);
-        this.acceralation.multiply(0);
+        this.velocity.addVector(Vector.multiplyVectors(this.acceleration, deltaTime));
+        this.position.addVector(Vector.multiplyVectors(this.velocity, deltaTime));
+        this.acceleration.multiply(0);
+        this.handleEdges();
     }
 
-    // Handle edge cases by re-appear the boid at the opposite edge
+    // Handle the edge
     handleEdges() {
         let {position, radius} = this;
         if (position.x < -radius) position.x = innerWidth + radius;
@@ -62,98 +55,53 @@ export default class Boid {
 
     }
 
-    // Find the local
-    findLocal(boids, limit) {
-        let local = [];
-        let origin = this.position;
-        for (let boid of boids) {
-            let end = boid.position;
-            const dist = origin.getDist(end);
-            if (dist < limit && boid !== this) {
-                local.push(boid);
+    // Rule 1: Separation
+    separation(local, avoidRadius) {
+        let move = new Vector();
+        if (local.length === 0) return move;
+
+        let avoidCount = 0;
+        for (let other of local) {
+            if (other.position.getDist(this.position) < avoidRadius) {
+                let diff = Vector.subtractVectors(this.position, other.position);
+                diff.divide(diff.getMag() * diff.getMag());
+                move.addVector(diff);
+                avoidCount++;
             }
         }
-        return local;
-    }
 
-    // Follow the flock
-    follow(boids, limit) {
-        const local = this.findLocal(boids, limit);
-
-        let separateForce = this.separate(local);
-        let alignForce = this.align(local);
-        let cohereForce = this.cohere(local);
-
-        separateForce.multiply(this.separateFactor);
-        alignForce.multiply(this.alignmentFactor);
-        cohereForce.multiply(this.cohesionFactor)
-
-        this.acceralation.addVector(separateForce);
-        this.acceralation.addVector(alignForce);
-        this.acceralation.addVector(cohereForce);
-    }
-
-    // Rule 1: Separation
-    // The boid steers to avoid collision with its flock-mates
-    separate(local) {
-        let totalDiff = new Vector();
-        for (let other of local) {
-            let diff = Vector.subtractVectors(this.position, other.position);
-            // Weight by distance
-            diff.divide(diff.getMag() * diff.getMag());
-            totalDiff.addVector(diff);
-        }
-
-        if (local.length > 0) {
-            totalDiff.divide(local.length);
-            totalDiff.setMag(this.maxSpeed);
-            let steer = Vector.subtractVectors(totalDiff, this.velocity);
-            if (steer.getMag() > this.maxForce)
-                steer.setMag(this.maxForce);
-            return steer;
-        } else return new Vector();
+        if (avoidCount > 0) move.divide(avoidCount);
+        return move;
     }
 
     // Rule 2: Alignment
-    // The boid steers to align with the average direction of local
-    align(local) {
-        let totalDX = 0, totalDY = 0;
-        // Find the local average velocity
-        for (let boid of local) {
-            totalDX += boid.velocity.x;
-            totalDY += boid.velocity.y;
+    alignment(local) {
+        if (local.length === 0)
+            return this.velocity;
+
+        let move = new Vector();
+        for (let other of local) {
+            move.addVector(other.velocity);
         }
-
-        if (local.length > 0) {
-            // Calculate desired vector
-            let desired = new Vector(totalDX / local.length, totalDY / local.length);
-            desired.setMag(this.maxSpeed);
-            let steer = Vector.subtractVectors(desired, this.velocity);
-            if (steer.getMag() > this.maxForce) steer.setMag(this.maxForce);
-            return steer;
-
-        } else return new Vector();
+        move.divide(local.length);
+        return move;
     }
 
     // Rule 3: Cohesion
-    // The boid steers towards the average position of local
-    cohere(local) {
-        let totalX = 0, totalY = 0;
-        // Find the local average velocity
-        for (let boid of local) {
-            totalX += boid.position.x;
-            totalY += boid.position.y;
+    cohesion(local) {
+        let move = new Vector();
+        if (local.length === 0) return move;
+
+        for (let other of local) {
+            move.addVector(other.position);
         }
+        move.divide(local.length);
+        move.subtractVector(this.position);
 
-        if (local.length > 0) {
-            // Calculate desired vector
-            let desired = new Vector(totalX / local.length, totalY / local.length);
-            desired.subtractVector(this.position);
-            desired.setMag(this.maxSpeed);
-            let steer = Vector.subtractVectors(desired, this.velocity);
-            if (steer.getMag() > this.maxForce) steer.setMag(this.maxForce);
-            return steer;
-        } else return new Vector();
+        return move;
+    }
 
+    applyForce(force) {
+        this.acceleration.addVector(force);
     }
 }

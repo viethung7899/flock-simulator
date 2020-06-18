@@ -1,48 +1,87 @@
-import Boid from './boid.js'
+import Boid from './boid.js';
+import Vector from './vector.js';
 
-// Initial setup
-const canvas = document.querySelector('#flock');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+const LIMIT = 300;
 
-const separation = document.getElementById('separation');
-const alignment = document.getElementById('alignment');
-const cohesion = document.getElementById('cohesion');
+export default class Flock {
+    constructor() {
+        this.boids = [];
 
-const ctx = canvas.getContext('2d');
+        // Parameters can change in controller
+        this.separationFactor = 2;
+        this.alignmentFactor = 1;
+        this.cohesionFactor = 1;
+        this.maxForce = 0.025;
+        this.maxSpeed = 4;
+        this.neighborRadius = 50;
+        this.avoidRadiusFactor = 0.5;
+    }
 
-// Initial the flock
-let boids = [];
-let limit = 100;
-for (let i = 0; i < 200; i++) {
-    const randomX = Math.random() * (canvas.width - 20) + 10;
-    const randomY = Math.random() * (canvas.height - 20) + 10
-    boids.push(new Boid(randomX, randomY));
-}
+    addBoid(x, y) {
+        if (this.boids.length < LIMIT)
+            this.boids.push(new Boid(x, y));
+    }
 
-//// Animate loop
-function animate() {
-    requestAnimationFrame(animate);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let boid of boids) {
-        boid.handleEdges();
-        boid.follow(boids, limit);
-        boid.draw(ctx);
-        boid.update();
-        if (isNaN(boid.position.x)) console.log('error');
+    reset() {
+        this.boids = [];
+    }
+
+    draw(ctx) {
+        ctx.clearRect(0, 0, innerWidth, innerHeight);
+
+        for (let boid of this.boids) {
+            boid.draw(ctx);
+            this.drive(boid);
+            boid.update();
+        }
+    }
+
+    drive(boid) {
+        // Find local
+        let local = this.findLocal(boid);
+
+        // Find desired direction
+        let separationDrive = boid.separation(local, this.neighborRadius * this.avoidRadiusFactor);
+        let alignmentDrive = boid.alignment(local);
+        let cohesionDrive = boid.cohesion(local);
+
+        // Generate forces
+        let separationForce = generateForce(boid, separationDrive, this.maxSpeed, this.maxForce);
+        let alignmentForce = generateForce(boid, alignmentDrive, this.maxSpeed, this.maxForce);
+        let cohesionForce = generateForce(boid, cohesionDrive, this.maxSpeed, this.maxForce);
+
+        // Apply weight
+        separationForce.multiply(this.separationFactor);
+        alignmentForce.multiply(this.alignmentFactor);
+        cohesionForce.multiply(this.cohesionFactor);
+
+
+        // Apply force
+        boid.applyForce(separationForce);
+        boid.applyForce(alignmentForce);
+        boid.applyForce(cohesionForce);
+    }
+
+    findLocal(boid) {
+        let local = [];
+        for (let other of this.boids) {
+            // console.log(other.position.getDist(boid.position));
+            if (other !== boid && other.position.getDist(boid.position) < this.neighborRadius) {
+                local.push(other);
+            }
+        }
+        return local;
     }
 }
 
-animate()
+function generateForce(boid, drive, maxSpeed, maxForce) {
+    if (drive.getMag() === 0) return new Vector();
 
-separation.addEventListener('input', ev => {
-    boids.forEach(boid => boid.separateFactor = +ev.target['value']);
-})
+    let steer = Vector.multiplyVectors(drive, 1);
+    steer.setMag(maxSpeed);
 
-alignment.addEventListener('input', ev => {
-    boids.forEach(boid => boid.alignmentFactor = +ev.target['value']);
-})
+    steer.subtractVector(boid.velocity);
+    if (steer.getMag() > maxForce) steer.setMag(maxForce);
 
-cohesion.addEventListener('input', ev => {
-    boids.forEach(boid => boid.cohesionFactor = +ev.target['value']);
-})
+    return steer;
+}
