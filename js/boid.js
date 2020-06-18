@@ -23,13 +23,26 @@ export default class Boid {
 
     // Draw on canvas
     draw(ctx) {
+        let {position, velocity} = this;
+        const angle = velocity.getAngle();
+
+        // Transform matrix
+        ctx.translate(position.x, position.y);
+        ctx.rotate(angle);
+
+        // Draw boid
         ctx.beginPath();
-        ctx.arc(this.position.x, this.position.y, this.radius,
-            0, Math.PI * 2, false);
+        ctx.moveTo(0, 0);
+        ctx.lineTo( -10, -4);
+        ctx.lineTo(-10, 4);
+        ctx.lineTo(0, 0);
         ctx.strokeStyle = 'white';
         ctx.stroke();
         ctx.fillStyle = '#fff'
         ctx.fill();
+
+        // Reset matrix
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
 
     // Update the position
