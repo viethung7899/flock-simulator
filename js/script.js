@@ -64,3 +64,9 @@ cohesion.addEventListener('input', ev => {
 viewRadius.addEventListener('input', ev => {
     flock.neighborRadius = +ev.target['value'];
 })
+
+// Resize window
+window.addEventListener('resize', ev => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+})
