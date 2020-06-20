@@ -10,13 +10,14 @@ let ctx = canvas.getContext('2d');
 const number = document.querySelector('span.number');
 
 // Sliders
+const units = document.getElementById('units');
+
 const separation = document.getElementById('separation');
 const alignment = document.getElementById('alignment');
 const cohesion = document.getElementById('cohesion');
-const viewRadius = document.getElementById('view-radius');
 
-// Button
-const resetButton = document.querySelector('button');
+const viewRadius = document.getElementById('view-radius');
+const avoidMultiplier = document.getElementById('avoid-radius');
 
 // START script
 let flock = new Flock();
@@ -27,42 +28,48 @@ function animate() {
 
 animate();
 
-// Sliders INIT
+// Sliders initialization
+units['value'] = flock.units;
 number.textContent = '' + flock.boids.length;
 separation['value'] = flock.separationFactor;
 alignment['value'] = flock.alignmentFactor;
 cohesion['value'] = flock.cohesionFactor;
 viewRadius['value'] = flock.neighborRadius;
-
-// Add boid by hover the screen
-document.addEventListener('mousemove', ev => {
-    if (ev.target === canvas) {
-        flock.addBoid(ev.clientX, ev.clientY);
-        number.textContent = "" + flock.boids.length;
-    }
-})
-
-// Reset button
-resetButton.addEventListener('click', ev => {
-    flock.reset();
-    number.textContent = "" + flock.boids.length;
-})
+avoidMultiplier['value'] = flock.avoidRadiusFactor;
 
 // Controller
+units.addEventListener('input', ev => {
+    flock.units = ev.target['value'];
+
+    while (flock.boids.length < flock.units) {
+        flock.addBoid(Math.random() * innerWidth, Math.random() * innerHeight);
+    }
+
+    while (flock.boids.length > flock.units) {
+        flock.boids.pop();
+    }
+
+    number.textContent = "" + flock.units;
+})
+
 separation.addEventListener('input', ev => {
     flock.separationFactor = +ev.target['value'];
-})
+});
 
 alignment.addEventListener('input', ev => {
     flock.alignmentFactor = +ev.target['value'];
-})
+});
 
 cohesion.addEventListener('input', ev => {
     flock.cohesionFactor = +ev.target['value'];
-})
+});
 
 viewRadius.addEventListener('input', ev => {
     flock.neighborRadius = +ev.target['value'];
+});
+
+avoidMultiplier.addEventListener('input', ev => {
+    flock.avoidRadiusFactor = +ev.target['value'];
 })
 
 // Resize window

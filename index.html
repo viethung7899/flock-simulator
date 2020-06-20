@@ -7,30 +7,39 @@
     <link href='https://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet' type='text/css'>
     <script defer src="js/script.js" type="module"></script>
 </head>
-<body>
-    <div class="controller">
-        <h1>Flock simulator</h1>
-        <div>Number of boid(s): <span class="number">50</span></div>
-        <div class="slider-container">
-            <div class="slider-group">
-                <label for="separation">Separation</label>
-                <input type="range" min="0" max="5" step="0.01" id="separation">
-            </div>
-            <div class="slider-group">
-                <label for="alignment">Alignment</label>
-                <input type="range" min="0" max="5" step="0.01" id="alignment">
-            </div>
-            <div class="slider-group">
-                <label for="cohesion">Cohesion</label>
-                <input type="range" min="0" max="5" step="0.01" id="cohesion">
-            </div>
-            <div class="slider-group">
-                <label for="view-radius">View Radius</label>
-                <input type="range" min="0" max="200" step="1" id="view-radius">
+    <body>
+        <div class="controller">
+            <h1>Flock simulator</h1>
+            <div>Number of units: <span class="number">50</span></div>
+            <div class="slider-container">
+                <div class="slider-group">
+                    <label for="units">Units</label>
+                    <input type="range" min="10" max="300" step="1" id="units">
+                </div>
+                <hr>
+                <div class="slider-group">
+                    <label for="separation">Separation</label>
+                    <input type="range" min="0" max="5" step="0.01" id="separation">
+                </div>
+                <div class="slider-group">
+                    <label for="alignment">Alignment</label>
+                    <input type="range" min="0" max="5" step="0.01" id="alignment">
+                </div>
+                <div class="slider-group">
+                    <label for="cohesion">Cohesion</label>
+                    <input type="range" min="0" max="5" step="0.01" id="cohesion">
+                </div>
+                <hr>
+                <div class="slider-group">
+                    <label for="view-radius">View Radius</label>
+                    <input type="range" min="0" max="200" step="1" id="view-radius">
+                </div>
+                <div class="slider-group">
+                    <label for="avoid-radius">Avoid Multiplier</label>
+                    <input type="range" min="0" max="1" step="0.01" id="avoid-radius">
+                </div>
             </div>
         </div>
-        <button>Reset</button>
-    </div>
-    <canvas id="flock" width="400" height="400"></canvas>
-</body>
+        <canvas id="flock" width="400" height="400"></canvas>
+    </body>
 </html>

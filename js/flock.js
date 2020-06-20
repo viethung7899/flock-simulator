@@ -6,6 +6,7 @@ const LIMIT = 300;
 export default class Flock {
     constructor() {
         this.boids = [];
+        this.units = 10;
 
         // Parameters can change in controller
         this.separationFactor = 2;
@@ -15,6 +16,10 @@ export default class Flock {
         this.maxSpeed = 4;
         this.neighborRadius = 50;
         this.avoidRadiusFactor = 0.5;
+
+        for (let i = 0; i < this.units; i++) {
+            this.addBoid(Math.random() * innerWidth, Math.random() * innerHeight);
+        }
     }
 
     addBoid(x, y) {
