@@ -1,4 +1,4 @@
-import Vector from "./vector.js";
+import Vector from "./geometry/vector.js";
 
 
 let print = 0;
@@ -11,6 +11,8 @@ export default class Boid {
         this.velocity = new Vector();
         this.velocity.random(Math.random() * 10 - 5);
         this.acceleration = new Vector();
+
+        this.hightlight = 'white';
     }
 
     // Draw on canvas
@@ -25,10 +27,10 @@ export default class Boid {
         // Draw boid
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo( -6, -2);
-        ctx.lineTo(-6, 2);
+        ctx.lineTo( -10, -3);
+        ctx.lineTo(-10, 3);
         ctx.lineTo(0, 0);
-        ctx.strokeStyle = 'white';
+        ctx.strokeStyle = this.hightlight;
         ctx.stroke();
         ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'
         ctx.fill();

@@ -1,12 +1,15 @@
 import Boid from './boid.js';
-import Vector from './vector.js';
+import Vector from './geometry/vector.js';
+import QuadTree from "./quadtree.js";
+import Rectangle from "./geometry/rectangle.js";
+import Circle from "./geometry/circle.js";
 
 const LIMIT = 300;
 
 export default class Flock {
     constructor() {
         this.boids = [];
-        this.units = 10;
+        this.units = 100;
 
         // Parameters can change in controller
         this.separationFactor = 2;
@@ -17,28 +20,31 @@ export default class Flock {
         this.neighborRadius = 50;
         this.avoidRadiusFactor = 0.5;
 
+        this.quadtree = undefined;
+        this.quadtreeCapacity = 10;
+        this.displayQuadTree = false;
+
         for (let i = 0; i < this.units; i++) {
             this.addBoid(Math.random() * innerWidth, Math.random() * innerHeight);
         }
     }
 
     addBoid(x, y) {
-        if (this.boids.length < LIMIT)
-            this.boids.push(new Boid(x, y));
+        this.boids.push(new Boid(x, y));
     }
 
-    reset() {
-        this.boids = [];
-    }
 
     draw(ctx) {
-        ctx.clearRect(0, 0, innerWidth, innerHeight);
+        this.quadtree = new QuadTree(new Rectangle(0, 0, innerWidth, innerHeight), this.quadtreeCapacity);
 
         for (let boid of this.boids) {
+            this.quadtree.insert(boid);
             boid.draw(ctx);
             this.drive(boid);
             boid.update();
         }
+
+        if (this.displayQuadTree) this.quadtree.show(ctx);
     }
 
     drive(boid) {
@@ -67,15 +73,21 @@ export default class Flock {
         boid.applyForce(cohesionForce);
     }
 
+
     findLocal(boid) {
-        let local = [];
-        for (let other of this.boids) {
-            // console.log(other.position.getDist(boid.position));
-            if (other !== boid && other.position.getDist(boid.position) < this.neighborRadius) {
-                local.push(other);
-            }
-        }
-        return local;
+        // Naive method (slow)
+        // let local = [];
+        // for (let other of this.boids) {
+        //     if (other !== boid && other.position.getDist(boid.position) < this.neighborRadius) {
+        //         local.push(other);
+        //     }
+        // }
+        // return local;
+
+        // Quadtree method (faster)
+        let boundary = new Circle(boid.position.x, boid.position.y, this.neighborRadius);
+        let found = this.quadtree.getPointsInCircle(boundary);
+        return found.filter(unit => unit !== boid);
     }
 }
 
